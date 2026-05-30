@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zomou — Jagne Santiago</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #181818;
+      --border: #1f1f1f;
+      --accent: #c8f055;
+      --accent2: #f0c855;
+      --text: #e8e4dc;
+      --muted: #6b6760;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+      --serif: 'Instrument Serif', serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      cursor: none;
+      overflow-x: hidden;
+    }
+
+    /* CURSOR */
+    .cursor {
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999;
+      transition: transform 0.15s ease, width 0.2s, height 0.2s, background 0.2s;
+      transform: translate(-50%, -50%);
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1px solid rgba(200,240,85,0.4);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform 0.35s cubic-bezier(0.23,1,0.32,1), width 0.3s, height 0.3s, border-color 0.3s;
+    }
+    body:has(a:hover) .cursor, body:has(button:hover) .cursor { width: 14px; height: 14px; background: var(--accent2); }
+    body:has(a:hover) .cursor-ring, body:has(button:hover) .cursor-ring { width: 56px; height: 56px; border-color: rgba(240,200,85,0.5); }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.4rem 3rem;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s, background 0.3s, backdrop-filter 0.3s;
+    }
+    nav.scrolled {
+      border-color: var(--border);
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(16px);
+    }
+    .nav-logo {
+      font-family: var(--sans); font-weight: 800; font-size: 1.3rem;
+      letter-spacing: -0.04em; color: var(--accent); text-decoration: none;
+      user-select: none;
+    }
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a {
+      font-family: var(--mono); font-size: 0.75rem; color: var(--muted);
+      text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ADMIN BADGE */
+    .admin-badge {
+      display: none;
+      align-items: center; gap: 0.5rem;
+      font-family: var(--mono); font-size: 0.65rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #0a0a0a;
+      background: var(--accent);
+      padding: 0.3rem 0.8rem;
+      border-radius: 2px;
+    }
+    .admin-badge.visible { display: flex; }
+    .admin-badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #0a0a0a;
+      animation: blink 1.2s ease infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .admin-logout {
+      font-family: var(--mono); font-size: 0.65rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); background: none; border: 1px solid var(--border);
+      border-radius: 2px; padding: 0.3rem 0.8rem;
+      cursor: none; transition: all 0.2s;
+      display: none;
+    }
+    .admin-logout.visible { display: block; }
+    .admin-logout:hover { color: #e55; border-color: #e55; }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 0 3rem 5rem; position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,240,85,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 10% 80%, rgba(240,200,85,0.04) 0%, transparent 60%);
+    }
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+    }
+    .hero-tag {
+      font-family: var(--mono); font-size: 0.72rem; color: var(--accent);
+      letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1.5rem;
+      opacity: 0; animation: fadeUp 0.8s 0.2s forwards;
+    }
+    .hero-name {
+      font-family: var(--sans); font-weight: 800;
+      font-size: clamp(3.5rem, 9vw, 9rem);
+      line-height: 0.92; letter-spacing: -0.04em; margin-bottom: 0.3em;
+      opacity: 0; animation: fadeUp 0.9s 0.35s forwards;
+    }
+    .hero-name span { color: var(--accent); }
+    .hero-sub {
+      font-family: var(--serif); font-style: italic;
+      font-size: clamp(1.1rem, 2.2vw, 1.75rem);
+      color: var(--muted); margin-bottom: 3rem;
+      opacity: 0; animation: fadeUp 0.9s 0.5s forwards;
+    }
+    .hero-ctas {
+      display: flex; gap: 1rem; align-items: center;
+      opacity: 0; animation: fadeUp 0.9s 0.65s forwards;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.85rem 2rem; border-radius: 3px;
+      font-family: var(--mono); font-size: 0.75rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      text-decoration: none; cursor: none; transition: all 0.25s;
+    }
+    .btn-primary { background: var(--accent); color: #0a0a0a; border: 1px solid var(--accent); }
+    .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--accent); }
+
+    .hero-scroll {
+      position: absolute; right: 3rem; bottom: 4rem;
+      display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+      opacity: 0; animation: fadeUp 1s 1s forwards;
+    }
+    .hero-scroll span {
+      font-family: var(--mono); font-size: 0.65rem;
+      color: var(--muted); letter-spacing: 0.15em;
+      text-transform: uppercase; writing-mode: vertical-rl;
+    }
+    .scroll-line {
+      width: 1px; height: 60px;
+      background: linear-gradient(to bottom, var(--muted), transparent);
+      animation: scrollLine 1.5s 1.2s ease infinite;
+    }
+    @keyframes scrollLine {
+      0% { transform: scaleY(0); transform-origin: top; opacity: 1; }
+      50% { transform: scaleY(1); transform-origin: top; opacity: 1; }
+      51% { transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+    }
+
+    /* ABOUT */
+    section { padding: 7rem 3rem; }
+    .section-label {
+      font-family: var(--mono); font-size: 0.72rem; color: var(--accent);
+      letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 3rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .section-label::after { content: ''; flex: 1; max-width: 80px; height: 1px; background: var(--border); }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+    .about-title { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 1.5rem; }
+    .about-title em { font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400; }
+    .about-text { color: var(--muted); line-height: 1.8; font-size: 1rem; margin-bottom: 1.5rem; }
+    .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .skill-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 1.2rem 1.4rem;
+      transition: border-color 0.25s, transform 0.25s;
+    }
+    .skill-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .skill-icon { font-size: 1.3rem; margin-bottom: 0.6rem; }
+    .skill-name { font-family: var(--mono); font-size: 0.8rem; color: var(--text); font-weight: 400; }
+    .skill-detail { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* WORKS */
+    #works { background: var(--surface); }
+    .works-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem; }
+    .works-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+    .works-count { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+    .projects-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px; }
+    .project-card { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; transition: border-color 0.3s; cursor: none; }
+    .project-card:hover { border-color: rgba(200,240,85,0.3); }
+    .project-card:hover .project-img-placeholder { transform: scale(1.03); }
+    .project-img-wrap { height: 200px; overflow: hidden; position: relative; background: var(--surface2); }
+    .project-img-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.4s cubic-bezier(0.23,1,0.32,1); position: relative;
+    }
+    .project-img-placeholder::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(200,240,85,0.04) 0%, transparent 60%);
+    }
+    .proj-icon { font-size: 2.5rem; opacity: 0.3; }
+    .project-body { padding: 1.5rem; }
+    .project-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
+    .tag {
+      font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 2px;
+      background: rgba(200,240,85,0.08); color: var(--accent);
+      border: 1px solid rgba(200,240,85,0.15);
+    }
+    .project-name { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .project-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.2rem; }
+    .project-links { display: flex; gap: 0.8rem; }
+    .project-link {
+      font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--muted); text-decoration: none;
+      display: flex; align-items: center; gap: 0.3rem; transition: color 0.2s;
+    }
+    .project-link:hover { color: var(--accent); }
+
+    /* ADD PROJECT — só visível no modo admin */
+    .add-project-card {
+      background: var(--bg); border: 1px dashed var(--border); border-radius: 4px;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 340px; cursor: none; transition: border-color 0.25s; gap: 0.8rem;
+    }
+    .add-project-card.admin-visible { display: flex; }
+    .add-project-card:hover { border-color: var(--accent); }
+    .add-project-card .add-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; color: var(--muted);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .add-project-card:hover .add-icon { border-color: var(--accent); color: var(--accent); }
+    .add-project-card span { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+    /* botão remover — só visível no modo admin */
+    .remove-btn {
+      display: none;
+      margin-left: auto; background: none; border: none;
+      color: var(--muted); font-family: var(--mono); font-size: 0.68rem;
+      cursor: none; transition: color 0.2s;
+    }
+    .remove-btn.admin-visible { display: block; }
+    .remove-btn:hover { color: #e55; }
+
+    /* SERVICES */
+    #services .services-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    }
+    .service-item { background: var(--bg); padding: 3rem; transition: background 0.25s; cursor: none; }
+    .service-item:hover { background: var(--surface); }
+    .service-num { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); letter-spacing: 0.12em; margin-bottom: 1.5rem; }
+    .service-name { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.8rem; }
+    .service-name span { color: var(--accent); }
+    .service-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.5rem; }
+    .service-features { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
+    .service-features li { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 0.6rem; }
+    .service-features li::before { content: '›'; color: var(--accent); font-size: 1rem; }
+
+    /* botão editar serviço — só visível no admin */
+    .edit-service-btn {
+      display: none;
+      margin-top: 1.5rem;
+      background: transparent; color: var(--text); border: 1px solid var(--border);
+      border-radius: 3px; padding: 0.6rem 1.2rem;
+      font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.08em;
+      text-transform: uppercase; cursor: none; transition: all 0.25s;
+    }
+    .edit-service-btn.admin-visible { display: inline-block; }
+    .edit-service-btn:hover { border-color: var(--muted); color: var(--accent); }
+
+    /* CONTACT */
+    #contact { background: var(--surface); }
+    .contact-wrap { max-width: 680px; margin: 0 auto; text-align: center; }
+    .contact-title { font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; margin-bottom: 1rem; }
+    .contact-title em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent); }
+    .contact-sub { color: var(--muted); font-size: 1rem; line-height: 1.7; margin-bottom: 3rem; }
+    .contact-form { text-align: left; display: flex; flex-direction: column; gap: 1rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-label { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .form-input, .form-select, .form-textarea {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); font-family: var(--sans); font-size: 0.9rem;
+      padding: 0.9rem 1.1rem; outline: none; transition: border-color 0.2s; cursor: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+    .form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236b6760' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; }
+    .form-select option { background: #111; }
+    .form-textarea { resize: vertical; min-height: 130px; }
+    .form-submit {
+      align-self: flex-start; background: var(--accent); color: #0a0a0a;
+      border: none; border-radius: 3px; padding: 1rem 2.5rem;
+      font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.1em;
+      text-transform: uppercase; font-weight: 500; cursor: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .form-submit:hover { background: var(--accent2); transform: translateY(-1px); }
+    .form-submit:active { transform: translateY(0); }
+
+    /* FOOTER */
+    footer { padding: 3rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .footer-logo { font-family: var(--sans); font-weight: 800; font-size: 1.1rem; letter-spacing: -0.04em; color: var(--accent); }
+    .footer-copy { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
+    .footer-links { display: flex; gap: 1.5rem; list-style: none; }
+    .footer-links a { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--accent); }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--accent); color: #0a0a0a;
+      padding: 1rem 1.5rem; border-radius: 4px;
+      font-family: var(--mono); font-size: 0.78rem; z-index: 999;
+      transform: translateY(20px); opacity: 0; transition: all 0.3s; pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { background: #e55; color: #fff; }
+
+    /* MODALS */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px); z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 2.5rem; max-width: 560px; width: 90%;
+      transform: translateY(20px); transition: transform 0.3s; position: relative;
+    }
+    .modal-overlay.open .modal { transform: none; }
+    .modal-title { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.4rem; }
+    .modal-sub { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-bottom: 1.8rem; }
+    .modal-close {
+      position: absolute; top: 1rem; right: 1rem;
+      background: none; border: none; color: var(--muted); font-size: 1.4rem;
+      cursor: none; transition: color 0.2s;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.5rem; }
+    .btn-modal-cancel {
+      background: transparent; border: 1px solid var(--border); border-radius: 3px;
+      padding: 0.75rem 1.5rem; font-family: var(--mono); font-size: 0.72rem;
+      color: var(--muted); cursor: none; transition: all 0.2s;
+    }
+    .btn-modal-cancel:hover { color: var(--text); border-color: var(--muted); }
+    .btn-modal-add {
+      background: var(--accent); border: none; border-radius: 3px;
+      padding: 0.75rem 1.5rem; font-family: var(--mono); font-size: 0.72rem;
+      color: #0a0a0a; cursor: none; transition: background 0.2s;
+    }
+    .btn-modal-add:hover { background: var(--accent2); }
+
+    /* LOGIN MODAL especial */
+    #loginModal .modal { max-width: 400px; }
+    .login-hint {
+      font-family: var(--mono); font-size: 0.65rem; color: var(--muted);
+      text-align: center; margin-top: 0.8rem; letter-spacing: 0.06em;
+    }
+    .password-wrap { position: relative; }
+    .toggle-pw {
+      position: absolute; right: 0.9rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--muted); cursor: none;
+      font-size: 0.9rem; transition: color 0.2s;
+    }
+    .toggle-pw:hover { color: var(--text); }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.7s cubic-bezier(0.23,1,0.32,1), transform 0.7s cubic-bezier(0.23,1,0.32,1); }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 900px) {
+      nav { padding: 1.2rem 1.5rem; }
+      section { padding: 5rem 1.5rem; }
+      .hero { padding: 0 1.5rem 4rem; }
+      .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .projects-grid { grid-template-columns: 1fr 1fr; }
+      #services .services-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+      body { cursor: auto; }
+      .cursor, .cursor-ring { display: none; }
+    }
+    @media (max-width: 600px) { .projects-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo" id="navLogo">Zomou</a>
+  <ul class="nav-links">
+    <li><a href="#about">Sobre</a></li>
+    <li><a href="#works">Trabalhos</a></li>
+    <li><a href="#services">Serviços</a></li>
+    <li><a href="#contact">Contato</a></li>
+  </ul>
+  <div style="display:flex;gap:0.8rem;align-items:center;">
+    <span class="admin-badge" id="adminBadge"><span class="admin-badge-dot"></span>Admin</span>
+    <button class="admin-logout" id="adminLogout" onclick="logout()">Sair</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <p class="hero-tag">Full-Stack Developer — Node.js · React Native</p>
+  <h1 class="hero-name">Jagne<br /><span>Santiago</span></h1>
+  <p class="hero-sub">Construindo experiências digitais que importam</p>
+  <div class="hero-ctas">
+    <a href="#works" class="btn btn-primary">Ver trabalhos</a>
+    <a href="#contact" class="btn btn-ghost">Falar comigo</a>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <span>Rolar</span>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <p class="section-label reveal">Sobre mim</p>
+  <div class="about-grid">
+    <div class="reveal">
+      <h2 class="about-title">Desenvolvedor<br /><em>apaixonado</em><br />por tecnologia</h2>
+      <p class="about-text">Sou desenvolvedor full-stack com foco em Node.js e React Native, criando soluções robustas tanto no back-end quanto em aplicações mobile. Gosto de transformar ideias em produtos digitais funcionais e bem desenhados.</p>
+      <p class="about-text">Cada projeto é uma oportunidade de aprender e entregar algo que realmente faça diferença para quem usa.</p>
+    </div>
+    <div class="reveal">
+      <div class="skills-grid">
+        <div class="skill-card"><div class="skill-icon">⬡</div><div class="skill-name">Node.js</div><div class="skill-detail">APIs REST · GraphQL</div></div>
+        <div class="skill-card"><div class="skill-icon">◎</div><div class="skill-name">React Native</div><div class="skill-detail">iOS · Android</div></div>
+        <div class="skill-card"><div class="skill-icon">▣</div><div class="skill-name">React.js</div><div class="skill-detail">Frontend Web</div></div>
+        <div class="skill-card"><div class="skill-icon">◈</div><div class="skill-name">Databases</div><div class="skill-detail">PostgreSQL · MongoDB</div></div>
+        <div class="skill-card"><div class="skill-icon">◷</div><div class="skill-name">TypeScript</div><div class="skill-detail">Tipagem estática</div></div>
+        <div class="skill-card"><div class="skill-icon">⬢</div><div class="skill-name">DevOps</div><div class="skill-detail">Docker · AWS · CI/CD</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORKS -->
+<section id="works">
+  <div class="works-header reveal">
+    <div>
+      <p class="section-label" style="margin-bottom:0.8rem">Portfólio</p>
+      <h2 class="works-title">Meus<br />trabalhos</h2>
+    </div>
+    <span class="works-count" id="projectCount">0 projetos</span>
+  </div>
+  <div class="projects-grid" id="projectsGrid">
+    <div class="add-project-card" id="addProjectBtn" onclick="openProjectModal()">
+      <div class="add-icon">+</div>
+      <span>Adicionar projeto</span>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <p class="section-label reveal">O que ofereço</p>
+  <h2 class="works-title reveal" style="margin-bottom:2.5rem">Serviços</h2>
+  <div class="services-grid reveal">
+    <div class="service-item">
+      <p class="service-num">01</p>
+      <h3 class="service-name">Desenvolvimento <span>Back-end</span></h3>
+      <p class="service-desc">APIs robustas, escaláveis e bem documentadas com Node.js. Arquitetura limpa, autenticação, integrações e muito mais.</p>
+      <ul class="service-features"><li>APIs REST &amp; GraphQL</li><li>Autenticação JWT/OAuth</li><li>Banco de dados SQL e NoSQL</li><li>Integrações de terceiros</li></ul>
+    </div>
+    <div class="service-item">
+      <p class="service-num">02</p>
+      <h3 class="service-name">Apps <span>Mobile</span></h3>
+      <p class="service-desc">Aplicativos mobile nativos com React Native, entregando experiências fluidas e responsivas para iOS e Android.</p>
+      <ul class="service-features"><li>React Native (Expo/CLI)</li><li>UI/UX para mobile</li><li>Notificações push</li><li>Publicação nas stores</li></ul>
+    </div>
+    <div class="service-item">
+      <p class="service-num">03</p>
+      <h3 class="service-name">Frontend <span>Web</span></h3>
+      <p class="service-desc">Interfaces modernas, rápidas e acessíveis com React.js. Do design à implementação com atenção aos detalhes.</p>
+      <ul class="service-features"><li>React.js / Next.js</li><li>Responsividade</li><li>Performance otimizada</li><li>Acessibilidade</li></ul>
+    </div>
+    <div class="service-item">
+      <p class="service-num">04</p>
+      <h3 class="service-name"><span id="customServiceName">Consultoria &amp; Mentoria</span></h3>
+      <p class="service-desc" id="customServiceDesc">Revisão de código, arquitetura de projetos, pair programming e orientação técnica para equipes e desenvolvedores.</p>
+      <ul class="service-features" id="customServiceFeatures">
+        <li>Code review</li><li>Arquitetura de software</li><li>Boas práticas</li><li>Pair programming</li>
+      </ul>
+      <button class="edit-service-btn" id="editServiceBtn" onclick="openServiceModal()">✎ Editar serviço</button>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-wrap">
+    <p class="section-label reveal" style="justify-content:center;margin-bottom:1.5rem">Contato</p>
+    <h2 class="contact-title reveal">Vamos<br /><em>trabalhar</em><br />juntos?</h2>
+    <p class="contact-sub reveal">Estou disponível para projetos freelance, colaborações e posições full-time. Me manda uma mensagem!</p>
+    <form class="contact-form reveal" onsubmit="handleContact(event)">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nome</label><input type="text" class="form-input" placeholder="Seu nome" required /></div>
+        <div class="form-group"><label class="form-label">E-mail</label><input type="email" class="form-input" placeholder="seu@email.com" required /></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de projeto</label>
+        <select class="form-select">
+          <option value="">Selecione uma opção</option>
+          <option>API / Back-end</option><option>App Mobile</option>
+          <option>Frontend Web</option><option>Full-Stack completo</option>
+          <option>Consultoria / Mentoria</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Orçamento estimado</label>
+        <select class="form-select">
+          <option value="">Selecione uma faixa</option>
+          <option>Até R$ 2.000</option><option>R$ 2.000 – R$ 5.000</option>
+          <option>R$ 5.000 – R$ 15.000</option><option>R$ 15.000+</option>
+          <option>A definir</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Mensagem</label><textarea class="form-textarea" placeholder="Conte sobre seu projeto, prazo, tecnologias desejadas..." required></textarea></div>
+      <button type="submit" class="form-submit">Enviar mensagem →</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">Zomou</span>
+  <span class="footer-copy">© 2025 Jagne Santiago. Todos os direitos reservados.</span>
+  <ul class="footer-links">
+    <li><a href="#">GitHub</a></li>
+    <li><a href="#">LinkedIn</a></li>
+    <li><a href="#">Twitter</a></li>
+  </ul>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('loginModal')">×</button>
+    <h3 class="modal-title">Área restrita</h3>
+    <p class="modal-sub">Digite a senha de administrador para continuar</p>
+    <div class="contact-form">
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <div class="password-wrap">
+          <input type="password" class="form-input" id="loginPassword" placeholder="••••••••"
+            onkeydown="if(event.key==='Enter') doLogin()" style="padding-right:3rem" />
+          <button class="toggle-pw" type="button" onclick="togglePw()" tabindex="-1">👁</button>
+        </div>
+      </div>
+    </div>
+    <p class="login-hint" id="loginError" style="color:#e55;display:none">Senha incorreta. Tente novamente.</p>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('loginModal')">Cancelar</button>
+      <button class="btn-modal-add" onclick="doLogin()">Entrar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT MODAL -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('projectModal')">×</button>
+    <h3 class="modal-title">Adicionar projeto</h3>
+    <p class="modal-sub">Preencha os dados do seu trabalho</p>
+    <div class="contact-form">
+      <div class="form-group"><label class="form-label">Nome do projeto</label><input type="text" class="form-input" id="projName" placeholder="Ex: App de Finanças" /></div>
+      <div class="form-group"><label class="form-label">Descrição curta</label><textarea class="form-textarea" id="projDesc" style="min-height:80px" placeholder="O que esse projeto faz?"></textarea></div>
+      <div class="form-group"><label class="form-label">Tags (separadas por vírgula)</label><input type="text" class="form-input" id="projTags" placeholder="Ex: Node.js, React Native, API" /></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Link do GitHub</label><input type="url" class="form-input" id="projGithub" placeholder="https://github.com/..." /></div>
+        <div class="form-group"><label class="form-label">Link ao vivo</label><input type="url" class="form-input" id="projLive" placeholder="https://..." /></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('projectModal')">Cancelar</button>
+      <button class="btn-modal-add" onclick="addProject()">Adicionar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SERVICE MODAL -->
+<div class="modal-overlay" id="serviceModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('serviceModal')">×</button>
+    <h3 class="modal-title">Editar serviço personalizado</h3>
+    <p class="modal-sub">Customize o serviço #04 do seu portfólio</p>
+    <div class="contact-form">
+      <div class="form-group"><label class="form-label">Nome do serviço</label><input type="text" class="form-input" id="svcName" placeholder="Ex: Infra & Cloud" /></div>
+      <div class="form-group"><label class="form-label">Descrição</label><textarea class="form-textarea" id="svcDesc" style="min-height:90px" placeholder="Descreva o serviço..."></textarea></div>
+      <div class="form-group"><label class="form-label">Diferenciais (1 por linha)</label><textarea class="form-textarea" id="svcFeatures" style="min-height:90px" placeholder="AWS / GCP&#10;Terraform&#10;Kubernetes&#10;Monitoramento"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('serviceModal')">Cancelar</button>
+      <button class="btn-modal-add" onclick="saveService()">Salvar →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─────────────────────────────────────────────
+  // SENHA — altere aqui para a sua senha secreta
+  // ─────────────────────────────────────────────
+  const ADMIN_PASSWORD = 'zomou2025';
+
+  // ── CURSOR ──
+  const cursor = document.getElementById('cursor');
+  const ring   = document.getElementById('cursorRing');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; cursor.style.left=mx+'px'; cursor.style.top=my+'px'; });
+  (function anim(){ rx+=(mx-rx)*0.12; ry+=(my-ry)*0.12; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(anim); })();
+
+  // ── NAV SCROLL ──
+  const navEl = document.getElementById('nav');
+  window.addEventListener('scroll', () => navEl.classList.toggle('scrolled', window.scrollY > 40));
+
+  // ── REVEAL ──
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach((e,i) => { if(e.isIntersecting){ setTimeout(()=>e.target.classList.add('visible'),i*80); obs.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  reveals.forEach(r => obs.observe(r));
+
+  // ── LOGO: clique 3x rápido para abrir login ──
+  let logoClicks = 0, logoTimer = null;
+  document.getElementById('navLogo').addEventListener('click', e => {
+    e.preventDefault();
+    logoClicks++;
+    clearTimeout(logoTimer);
+    logoTimer = setTimeout(() => { logoClicks = 0; }, 700);
+    if (logoClicks >= 3) {
+      logoClicks = 0;
+      if (isAdmin()) { showToast('Você já está no modo admin.'); }
+      else { document.getElementById('loginModal').classList.add('open'); document.getElementById('loginPassword').focus(); }
+    }
+  });
+
+  // ── ADMIN STATE ──
+  function isAdmin() { return sessionStorage.getItem('zomou_admin') === '1'; }
+
+  function applyAdminMode(active) {
+    document.getElementById('adminBadge').classList.toggle('admin-visible', active);
+    document.getElementById('adminLogout').classList.toggle('admin-visible', active);
+    document.getElementById('addProjectBtn').classList.toggle('admin-visible', active);
+    document.getElementById('editServiceBtn').classList.toggle('admin-visible', active);
+    document.querySelectorAll('.remove-btn').forEach(b => b.classList.toggle('admin-visible', active));
+  }
+
+  function doLogin() {
+    const pw = document.getElementById('loginPassword').value;
+    const err = document.getElementById('loginError');
+    if (pw === ADMIN_PASSWORD) {
+      sessionStorage.setItem('zomou_admin', '1');
+      closeModal('loginModal');
+      document.getElementById('loginPassword').value = '';
+      err.style.display = 'none';
+      applyAdminMode(true);
+      showToast('✓ Modo admin ativado!');
+    } else {
+      err.style.display = 'block';
+      document.getElementById('loginPassword').select();
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem('zomou_admin');
+    applyAdminMode(false);
+    showToast('Modo admin desativado.');
+  }
+
+  function togglePw() {
+    const inp = document.getElementById('loginPassword');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  // ── PROJECTS ──
+  const icons  = ['◈','◎','⬡','▣','◷','⬢','◐','◑'];
+  const colors = ['rgba(200,240,85,0.12)','rgba(240,200,85,0.08)','rgba(100,180,255,0.08)','rgba(200,100,255,0.08)'];
+  let projects = JSON.parse(localStorage.getItem('zomou_projects') || '[]');
+
+  function updateProjectCount() {
+    document.getElementById('projectCount').textContent = projects.length + (projects.length === 1 ? ' projeto' : ' projetos');
+  }
+
+  function renderProjects() {
+    const grid   = document.getElementById('projectsGrid');
+    const addBtn = document.getElementById('addProjectBtn');
+    grid.querySelectorAll('.project-card').forEach(c => c.remove());
+    const admin = isAdmin();
+
+    projects.forEach((p, i) => {
+      const card = document.createElement('div');
+      card.className = 'project-card reveal';
+      const tags    = p.tags.split(',').map(t=>`<span class="tag">${t.trim()}</span>`).join('');
+      const ghLink  = p.github ? `<a href="${p.github}" target="_blank" class="project-link">↗ GitHub</a>` : '';
+      const liveLink= p.live   ? `<a href="${p.live}"   target="_blank" class="project-link">↗ Live</a>`   : '';
+      card.innerHTML = `
+        <div class="project-img-wrap">
+          <div class="project-img-placeholder" style="background:${colors[i%colors.length]}">
+            <span class="proj-icon">${icons[i%icons.length]}</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-tags">${tags}</div>
+          <h3 class="project-name">${p.name}</h3>
+          <p class="project-desc">${p.desc}</p>
+          <div class="project-links">
+            ${ghLink}${liveLink}
+            <button class="remove-btn${admin?' admin-visible':''}" onclick="removeProject(${i})">✕ remover</button>
+          </div>
+        </div>
+      `;
+      grid.insertBefore(card, addBtn);
+      setTimeout(() => card.classList.add('visible'), 50);
+    });
+    updateProjectCount();
+  }
+
+  function removeProject(i) {
+    if (!isAdmin()) return;
+    projects.splice(i, 1);
+    localStorage.setItem('zomou_projects', JSON.stringify(projects));
+    renderProjects();
+  }
+
+  function openProjectModal() { if(!isAdmin()) return; document.getElementById('projectModal').classList.add('open'); }
+  function openServiceModal() {
+    if(!isAdmin()) return;
+    document.getElementById('svcName').value = document.getElementById('customServiceName').textContent;
+    document.getElementById('svcDesc').value = document.getElementById('customServiceDesc').textContent;
+    const features = [...document.getElementById('customServiceFeatures').querySelectorAll('li')].map(l=>l.textContent).join('\n');
+    document.getElementById('svcFeatures').value = features;
+    document.getElementById('serviceModal').classList.add('open');
+  }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+  });
+
+  function addProject() {
+    if(!isAdmin()) return;
+    const name = document.getElementById('projName').value.trim();
+    const desc = document.getElementById('projDesc').value.trim();
+    const tags = document.getElementById('projTags').value.trim() || 'Projeto';
+    const github = document.getElementById('projGithub').value.trim();
+    const live   = document.getElementById('projLive').value.trim();
+    if(!name){ showToast('Digite o nome do projeto!'); return; }
+    projects.push({ name, desc, tags, github, live });
+    localStorage.setItem('zomou_projects', JSON.stringify(projects));
+    closeModal('projectModal');
+    ['projName','projDesc','projTags','projGithub','projLive'].forEach(id => document.getElementById(id).value='');
+    renderProjects();
+    showToast('✓ Projeto adicionado!');
+  }
+
+  function saveService() {
+    if(!isAdmin()) return;
+    const name     = document.getElementById('svcName').value.trim();
+    const desc     = document.getElementById('svcDesc').value.trim();
+    const features = document.getElementById('svcFeatures').value.trim().split('\n').filter(Boolean);
+    if(name) document.getElementById('customServiceName').innerHTML = name;
+    if(desc) document.getElementById('customServiceDesc').textContent = desc;
+    if(features.length){
+      const ul = document.getElementById('customServiceFeatures');
+      ul.innerHTML = features.map(f=>`<li>${f}</li>`).join('');
+    }
+    closeModal('serviceModal');
+    showToast('✓ Serviço atualizado!');
+  }
+
+  function handleContact(e) {
+    e.preventDefault();
+    showToast('✓ Mensagem enviada! Retorno em breve.');
+    e.target.reset();
+  }
+
+  function showToast(msg, error=false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (error?' error':'');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  // Init
+  renderProjects();
+  if(isAdmin()) applyAdminMode(true);
+</script>
+</body>
+</html>
